@@ -24,7 +24,7 @@ const Actor = sequelize.define('actor', {
     allowNull: false
   },
   profilePic: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   status: {

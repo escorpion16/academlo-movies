@@ -26,7 +26,11 @@ const User = sequelize.define('user', {
     allowNull: false,
     defaultValue: 'active'
   },
-  role: {}
+  role: {
+    type: DataTypes.STRING(10),
+    allowNull: false,
+    defaultValue: 'guest' // guest || admin
+  }
 });
 
 module.exports = { User };

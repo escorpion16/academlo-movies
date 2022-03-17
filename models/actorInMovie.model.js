@@ -4,6 +4,7 @@ const { DataTypes } = require('sequelize');
 const ActorInMovie = sequelize.define('actorInMovie', {
   id: {
     primaryKey: true,
+    autoIncrement: true,
     type: DataTypes.INTEGER,
     allowNull: false
   },

@@ -4,6 +4,7 @@ const { sequelize } = require('../util/database');
 const Movie = sequelize.define('movie', {
   id: {
     primaryKey: true,
+    autoIncrement: true,
     type: DataTypes.INTEGER,
     allowNull: false
   },
@@ -12,12 +13,13 @@ const Movie = sequelize.define('movie', {
     allowNull: false
   },
   description: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(100),
     allowNull: false
   },
   duration: {
     type: DataTypes.STRING(10),
-    allowNull: false
+    allowNull: false,
+    defaultValue: 0
   },
   rating: {
     type: DataTypes.INTEGER,
