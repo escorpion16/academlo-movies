@@ -5,7 +5,8 @@ const Actor = sequelize.define('actor', {
   id: {
     primaryKey: true,
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    autoIncrement: true
   },
   name: {
     type: DataTypes.STRING(50),
