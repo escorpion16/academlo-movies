@@ -10,14 +10,12 @@ const {
 
 const router = express.Router();
 
-router.get('/', getAllUsers);
+router.route('/').get(getAllUsers).post(createNewUser);
 
-router.get('/:id', getUserById);
+router
+  .route('/:id')
+  .get(getUserById)
+  .patch(updateUser)
+  .delete(deleteUser);
 
-router.post('/', createNewUser);
-
-router.patch('/:id', updateUser);
-
-router.delete('/:id', deleteUser);
-
-module.exports = { usersRouter: router };
+module.exports = { actorsRouter: router };
