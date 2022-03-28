@@ -1,129 +1,100 @@
+const { validationResult } = require('express-validator');
+const {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} = require('firebase/storage');
+
 //Models
 const { Actor } = require('../models/actor.model');
 
 // Utils
 const { catchAsync } = require('../util/catchAsync');
 const { filterObj } = require('../util/filterObj');
+const { AppError } = require('../util/appError');
+const { storage } = require('../util/firebase');
 
 exports.getAllActors = catchAsync(async (req, res) => {
-  try {
-    const actors = await Actor.findAll({
-      where: { status: 'active' }
-    });
+  const actors = await Actor.findAll({
+    where: { status: 'active' }
+  });
 
-    res.status(200).json({
-      status: 'success',
-      data: { actors }
-    });
-  } catch (error) {
-    console.log(error);
-  }
+  res.status(200).json({
+    status: 'success',
+    data: { actors }
+  });
 });
 
-exports.getAllActorById = catchAsync(async (req, res) => {
-  try {
-    const { id } = req.params;
+exports.getActorById = catchAsync(async (req, res) => {
+  const { actor } = req;
 
-    const actor = await Actor.findOne({ where: { id } });
-
-    if (!actor) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Actor not found'
-      });
-      return;
+  res.status(200).json({
+    status: 'success',
+    data: {
+      actor
     }
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        actor
-      }
-    });
-  } catch (error) {
-    console.log(error);
-  }
+  });
 });
 
 exports.createNewActor = catchAsync(async (req, res) => {
-  try {
-    const { name, country, age } = req.body;
+  const { name, country, rating, age } = req.body;
 
-    if (!name || !country || !age || !profilePic) {
-      res.status(400).json({
-        status: 'error',
-        message:
-          'MUst provide a valid name, country and age'
-      });
-      return;
-    }
+  // validate req.body
+  const errors = validationResult(req);
 
-    const newActor = await Actor.create({
-      name,
-      country,
-      age
-    });
-
-    res.status(201).json({
-      status: 'success',
-      data: { newActor }
-    });
-  } catch (error) {
-    console.log(error);
+  if (!errors.isEmpty()) {
+    const errorMsg = errors
+      .array()
+      .map(({ msg }) => msg)
+      .join('. ');
+    return next(new AppError(400, errorMsg));
   }
+
+  const fileExtension = req.file.originalname.split('.')[1];
+
+  const imgRef = ref(
+    storage,
+    `imgs/actors/${name}-${Date.now}.${fileExtension}`
+  );
+  const imgUploaded = await uploadBytes(
+    imgRef,
+    req.file.buffer
+  );
+
+  const newActor = await Actor.create({
+    name,
+    country,
+    rating,
+    age,
+    profilePic: imgUploaded.metadata.fullPath
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: { newActor }
+  });
 });
 
 exports.updateActor = catchAsync(async (req, res) => {
-  try {
-    const { id } = req.params;
+  const { actor } = req;
 
-    const data = filterObj(
-      req.body,
-      'name',
-      'country',
-      'age'
-    );
+  const data = filterObj(
+    req.body,
+    'name',
+    'country',
+    'rating',
+    'age'
+  );
 
-    const actor = await Actor.findOne({
-      where: { id, status: 'active' }
-    });
+  await actor.update({ ...data });
 
-    if (!actor) {
-      res.status(404).json({
-        status: 'success',
-        message: 'Cant update actor, invalid ID'
-      });
-      return;
-    }
-
-    await actor.update({ ...data });
-
-    res.status(204).json({ status: 'success' });
-  } catch (error) {
-    console.log(error);
-  }
+  res.status(204).json({ status: 'success' });
 });
 
 exports.deleteActor = catchAsync(async (req, res) => {
-  try {
-    const { id } = req.params;
+  const { actor } = req;
 
-    const actor = await Actor.findOne({
-      where: { id, status: 'active' }
-    });
+  await actor.update({ status: 'deleted' });
 
-    if (!actor) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Cant delete actor, invalid ID'
-      });
-      return;
-    }
-
-    await actor.update({ status: 'deleted' });
-
-    res.status(204).json({ status: 'success' });
-  } catch (error) {
-    console.log(error);
-  }
+  res.status(204).json({ status: 'success' });
 });

@@ -1,3 +1,6 @@
+const { ref, uploadBytes } = require('firebase/storage');
+const { validationResult } = require('express-validator');
+
 // Model
 const { Movie } = require('../models/movie.model');
 const {
@@ -7,6 +10,7 @@ const {
 // Utils
 const { catchAsync } = require('../util/catchAsync');
 const { AppError } = require('../util/appError');
+const { storage } = require('../util/firebase');
 
 exports.getAllMovies = catchAsync(
   async (req, res, next) => {
@@ -47,17 +51,39 @@ exports.createNewMovie = catchAsync(
       description,
       duration,
       rating,
-      img,
       genre,
       actors
     } = req.body;
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const errorMsg = errors
+        .array()
+        .map(({ msg }) => msg)
+        .join('. ');
+      return next(new AppError(400, errorMsg));
+    }
+    // Upload img to firebase
+    const fileExtension =
+      req.file.originalname.split('.')[1];
+
+    const imgRef = ref(
+      storage,
+      `imgs/movies/${title}-${Date.now()}.${fileExtension}`
+    );
+
+    const imgUploaded = await uploadBytes(
+      imgRef,
+      req.file.buffer
+    );
 
     const newMovie = await Movie.create({
       title,
       description,
       duration,
       rating,
-      img: 'img.png',
+      img: imgUploaded.metadata.fullPath,
       genre
     });
 
